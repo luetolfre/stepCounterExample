@@ -33,8 +33,6 @@ import android.widget.TextView;
  * Therefore even when the Application Processor is in suspend mode it will report the count when the AP is awake.
  *
  * This sensor requires permission android.permission.ACTIVITY_RECOGNITION.
- *
- * Constant Value: 19 (0x00000013)
  */
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
