@@ -24,7 +24,7 @@ import android.widget.TextView;
  * This sensor is implemented in hardware and is expected to be low power.
  * If you want to continuously track the number of steps over a long period of time,
  * do NOT unregister for this sensor, so that it keeps counting steps in the background
- * even when the AP is in suspend mode and report the aggregate count when the AP is awake.
+ * even when the AP (Application Processor) is in suspend mode and report the aggregate count when the AP is awake.
  * Application needs to stay registered for this sensor because step counter does not
  * count steps if it is not activated. This sensor is ideal for fitness tracking applications.
  * It is defined as an Sensor#REPORTING_MODE_ON_CHANGE sensor.
@@ -53,7 +53,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     /**
-     *
+     * create a new view in night mode, read from activity_main.xml
+     * Sensor manager gets all the services available on the phone
      * @param savedInstanceState
      */
     @Override
@@ -65,18 +66,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
         // get every System Service available on the phone
-        try {
-            mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        } catch (Exception e) {
-            Log.e("sensor","Could not find sensor service");
-        }
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         // get the STEP_COUNTER from the Sensor Manager which constant value is the 19
-        try {
+        if (mSensorManager != null) {
             //myStepSensor = mSensorManager.getDefaultSensor(19);
             myStepSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-        } catch (Exception e) {
-            Log.e("sensor", "Could not find step sensor");
+        }
+        else {
+            Log.e("sensor", "NullPointer on mSensorManager, could not find any Sensor Manager ");
         }
     }
 
@@ -105,7 +103,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Log.v("steps", String.valueOf(event.values[0]));
+        Log.v("steps", String.valueOf((int) event.values[0]));
+        // parse the float to int for better user experience
         textViewSteps.setText(String.valueOf((int) event.values[0]));
     }
 
@@ -113,9 +112,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * If the accuracy of the Sensor changes, this method gets called for example when using the
      * Step Sensor for several different walking conditions like running or hiking when the impact
      * on the Sensor is not the same
-     * (util when implementing Sensor Event Listener)
-     * @param sensor
-     * @param accuracy
+     * (util method when implementing Sensor Event Listener in class)
+     * @param sensor step sensor
+     * @param accuracy the value the accuracy should get changed to
      */
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
