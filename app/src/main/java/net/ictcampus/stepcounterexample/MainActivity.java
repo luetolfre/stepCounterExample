@@ -1,6 +1,7 @@
 package net.ictcampus.stepcounterexample;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -50,16 +51,32 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     TextView textViewSteps;
 
+
+    /**
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         textViewSteps = findViewById(R.id.stepCounter);
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        assert mSensorManager != null;
-        //myStepSensor = mSensorManager.getDefaultSensor(19);
-        myStepSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        // get every System Service available on the phone
+        try {
+            mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        } catch (Exception e) {
+            Log.e("sensor","Could not find sensor service");
+        }
+
+        // get the STEP_COUNTER from the Sensor Manager which constant value is the 19
+        try {
+            //myStepSensor = mSensorManager.getDefaultSensor(19);
+            myStepSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        } catch (Exception e) {
+            Log.e("sensor", "Could not find step sensor");
+        }
     }
 
     /**
@@ -73,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (myStepSensor != null) {
             Log.v("steps", "yay, there is a step sensor");
             // Add Eventlistener, returns true if Listener is successfully added and enabled.
+            // Listener listens to an event which then calls the Sensor Changed Method and logs the number
+            // this class implements the Event Listener, which is listening to the Step Sensor in a certain interval
             mSensorManager.registerListener(this, myStepSensor, SensorManager.SENSOR_DELAY_NORMAL);
         } else {
             Log.v("steps", "nope, there is no sensor.");
@@ -85,11 +104,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Log.v("StepCount", String.valueOf(event.values[0]));
-        textViewSteps.setText(String.valueOf(event.values[0]));
+        Log.v("steps", String.valueOf(event.values[0]));
+        textViewSteps.setText(String.valueOf((int) event.values[0]));
     }
 
+    /**
+     * If the accuracy of the Sensor changes, this method gets called for example when using the
+     * Step Sensor for several different walking conditions like running or hiking when the impact
+     * on the Sensor is not the same
+     * (util when implementing Sensor Event Listener)
+     * @param sensor
+     * @param accuracy
+     */
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        Log.v("accuracy", "the accuracy got changed (now you may be running or hiking)");
     }
 }
