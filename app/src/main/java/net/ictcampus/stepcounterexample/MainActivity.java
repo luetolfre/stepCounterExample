@@ -13,25 +13,26 @@ import android.util.Log;
 import android.widget.TextView;
 
 /**
- * Example of the Step Counter Sensor
+ * Example of the Usage of the Step Counter Sensor
  *
- * A constant describing a step counter sensor.
+ * The Step Counter Sensor is primarily used to count the steps that are being taken by the
+ * user of the device since the last reboot.
+ * A similar sensor is the step detector sensor, that triggers an event each time a step is taken.
  *
- * A sensor of this type returns the number of steps taken by the user
- * since the last reboot while activated. The value is returned as a float
- * (with the fractional part set to zero) and is reset to zero only on a system reboot.
- * The timestamp of the event is set to the time when the last step for that event was taken.
- * This sensor is implemented in hardware and is expected to be low power.
- * If you want to continuously track the number of steps over a long period of time,
- * do NOT unregister for this sensor, so that it keeps counting steps in the background
- * even when the AP (Application Processor) is in suspend mode and report the aggregate count when the AP is awake.
- * Application needs to stay registered for this sensor because step counter does not
- * count steps if it is not activated. This sensor is ideal for fitness tracking applications.
+ * Android treats these sensors as a logically separate sensors, but they are based on the accelerometer.
+ * All of them are highly battery optimized and consume very low power.
+ *
  * It is defined as an Sensor#REPORTING_MODE_ON_CHANGE sensor.
  *
- * This sensor requires permission android.permission.ACTIVITY_RECOGNITION.
+ * The value of the step counter sensor is a float with a fractional part that is always 0 ( e.g. 42.0)
+ * The event timestamp represents the time at which the last step was taken.
  *
- * See SensorEvent.values for more details.
+ * To continuously track the number over time, the Application needs to stay registered for the sensor.
+ * To save power, the listener can be unregistered or switched from continuous into batch mode
+ * (by specifying a latency > 0) to group the event in batches.
+ * Therefore even when the Application Processor is in suspend mode it will report the count when the AP is awake.
+ *
+ * This sensor requires permission android.permission.ACTIVITY_RECOGNITION.
  *
  * Constant Value: 19 (0x00000013)
  */
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /**
      * create a new view in night mode, read from activity_main.xml
      * Sensor manager gets all the services available on the phone
-     * @param savedInstanceState
+     * @param savedInstanceState bundle
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,24 +89,41 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // only if Sensor Type_Step_Counter is recognized.
         if (myStepSensor != null) {
             Log.v("steps", "yay, there is a step sensor");
-            // Add Eventlistener, returns true if Listener is successfully added and enabled.
+            // Add EventListener, returns true if Listener is successfully added and enabled.
             // Listener listens to an event which then calls the Sensor Changed Method and logs the number
             // this class implements the Event Listener, which is listening to the Step Sensor in a certain interval
-            mSensorManager.registerListener(this, myStepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            boolean listenerIsRegistered = mSensorManager.registerListener(this, myStepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            if (listenerIsRegistered) { Log.v("steps", "listener registered");}
         } else {
             Log.v("steps", "nope, there is no sensor.");
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(myStepSensor != null) {
+            // take off the Listener of the Sensor (while Sensor is counting by itself in the BG, power saving reasons)
+            mSensorManager.unregisterListener(this);
+            Log.v("steps", "listener unregistered");
+        }
+    }
+
     /**
-     * Updates the Textview with current steps and logs the mode steps.
+     * Updates the TextView with current steps and logs the mode steps.
      * @param event sensor changes
      */
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Log.v("steps", String.valueOf((int) event.values[0]));
         // parse the float to int for better user experience
         textViewSteps.setText(String.valueOf((int) event.values[0]));
+
+        // log timestamp in nanoseconds
+        // Log.v("steps", String.valueOf(event.timestamp));
+
+        // log stepcount
+        Log.v("steps", String.valueOf((int) event.values[0]));
+
     }
 
     /**
